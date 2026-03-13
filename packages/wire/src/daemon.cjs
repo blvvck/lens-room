@@ -1,17 +1,3 @@
-/**
- * daemon.cjs — wire daemon for @lens-cli/wire
- *
- * Handles:
- *   - Hyperswarm wire connections (peer-to-peer, ephemeral)
- *   - Wire state (wires.json) and peer notification
- *   - Daemon lifecycle: pid, socket, log, shutdown
- *
- * Nothing here touches mail. No account, no polling, no signal file.
- *
- * Run directly:  node daemon.cjs   (starts the daemon)
- * Import as lib: require('./daemon.cjs')  (client API)
- */
-
 'use strict';
 
 const fs = require('fs');
@@ -19,29 +5,22 @@ const path = require('path');
 const os = require('os');
 const net = require('net');
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const LENS_DIR = path.join(os.homedir(), '.lens');
 const PID_PATH = path.join(LENS_DIR, 'wire.pid');
 const SOCK_PATH = path.join(LENS_DIR, 'wire-daemon.sock');
 const WIRES_PATH = path.join(LENS_DIR, 'wires.json');
 const LOG_PATH = path.join(LENS_DIR, 'wire-daemon.log');
 
-const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_LOG_SIZE = 5 * 1024 * 1024;
 const MAX_BUFFER_SIZE = 1000;
-const MAX_MESSAGE_BYTES = 65536; // 64 KB
+const MAX_MESSAGE_BYTES = 65536;
 const MIN_PASSPHRASE_LEN = 8;
-const AUTO_STOP_INTERVAL_MS = 600000; // 10 min
+const AUTO_STOP_INTERVAL_MS = 600000;
 const CLIENT_TIMEOUT_MS = 10000;
 const DAEMON_SETTLE_MS = 500;
 const DAEMON_SOCKET_WAIT_MS = 1000;
 
-// ---------------------------------------------------------------------------
-// Security: Prompt injection detection for wire messages
-// Lightweight version of security-hooks.ts — runs on every inbound peer message.
-// ---------------------------------------------------------------------------
+// Peer messages are untrusted and may carry prompt injections.
 
 const INJECTION_PATTERNS = [
   /ignore\s+(?:all\s+)?(?:previous|prior|above)\s+instructions?/i,
@@ -62,10 +41,6 @@ const INJECTION_PATTERNS = [
   /###\s*(?:System|Instruction|Human|Assistant)\s*:/i,
 ];
 
-/**
- * Scan text for prompt injection patterns.
- * Returns null if clean, or { warning, patterns } if detected.
- */
 function scanInjection(text) {
   if (!text || typeof text !== 'string') return null;
   const matched = [];
@@ -80,17 +55,9 @@ function scanInjection(text) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Daemon state (only populated when running as daemon)
-// ---------------------------------------------------------------------------
-
-const wires = new Map(); // topic_hex -> { name, swarm, connections: Set, buffer: [], createdAt }
-const liveListeners = new Map(); // topic_hex -> Set<client_socket>
+const wires = new Map();
+const liveListeners = new Map();
 let daemonStartTime = null;
-
-// ---------------------------------------------------------------------------
-// Logging
-// ---------------------------------------------------------------------------
 
 function log(msg) {
   const line = `[${new Date().toISOString()}] ${msg}\n`;
@@ -106,18 +73,14 @@ function log(msg) {
       fs.writeFileSync(LOG_PATH, content.slice(Math.floor(content.length / 2)));
     }
   } catch {
-    // Best-effort logging
+    // Continue writing if log rotation fails.
   }
   try {
     fs.appendFileSync(LOG_PATH, line);
   } catch {
-    // If we can't log, carry on
+    // Logging must not interrupt daemon operation.
   }
 }
-
-// ---------------------------------------------------------------------------
-// Utility: Atomic file writes
-// ---------------------------------------------------------------------------
 
 function ensureLensDir() {
   if (!fs.existsSync(LENS_DIR)) {
@@ -131,15 +94,10 @@ function atomicWrite(filePath, data) {
     fs.writeFileSync(tmp, JSON.stringify(data, null, 2), { mode: 0o600 });
     fs.renameSync(tmp, filePath);
   } catch (err) {
-    // Clean up tmp on failure
     try { fs.unlinkSync(tmp); } catch {}
     throw err;
   }
 }
-
-// ---------------------------------------------------------------------------
-// Utility: Process checks
-// ---------------------------------------------------------------------------
 
 function isProcessRunning(pid) {
   if (!pid || isNaN(pid)) return false;
@@ -150,10 +108,6 @@ function isProcessRunning(pid) {
     return false;
   }
 }
-
-// ---------------------------------------------------------------------------
-// Utility: Find wire by name
-// ---------------------------------------------------------------------------
 
 function findWireByName(name) {
   for (const [, wire] of wires) {
@@ -168,10 +122,6 @@ function findWireTopicByName(name) {
   }
   return null;
 }
-
-// ---------------------------------------------------------------------------
-// Utility: Load mail accounts
-// ---------------------------------------------------------------------------
 
 function writeWiresState() {
   try {
@@ -192,10 +142,6 @@ function writeWiresState() {
   }
 }
 
-// ---------------------------------------------------------------------------
-// State persistence: mail.signal
-// ---------------------------------------------------------------------------
-
 function notifyLiveListeners(topicHex, msg) {
   const listeners = liveListeners.get(topicHex);
   if (!listeners || listeners.size === 0) return;
@@ -210,10 +156,6 @@ function notifyLiveListeners(topicHex, msg) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Wire topic derivation (Argon2id KDF)
-// ---------------------------------------------------------------------------
-
 async function deriveWireTopic(name, passphrase) {
   const argon2 = require('argon2');
   const salt = Buffer.from(`lens-wire:${name}`, 'utf8');
@@ -226,12 +168,8 @@ async function deriveWireTopic(name, passphrase) {
     parallelism: 1,
     raw: true,
   });
-  return hash; // 32-byte Buffer
+  return hash;
 }
-
-// ---------------------------------------------------------------------------
-// IPC command handlers (daemon side)
-// ---------------------------------------------------------------------------
 
 async function handleWireOpen(name, passphrase) {
   if (!name || typeof name !== 'string') {
@@ -251,7 +189,7 @@ async function handleWireOpen(name, passphrase) {
     return { ok: true, topic: topicHex, existing: true };
   }
 
-  // Check if a wire with the same name but different passphrase exists
+  // A wire name identifies one channel per daemon.
   const existingByName = findWireByName(name);
   if (existingByName) {
     throw new Error(`Wire "${name}" already exists with a different passphrase`);
@@ -282,7 +220,6 @@ async function handleWireOpen(name, passphrase) {
         msg.peer_id = peerId;
         msg.received_at = new Date().toISOString();
 
-        // Security: scan for prompt injection in peer messages
         const injection = scanInjection(msg.content);
         if (injection) {
           msg.security_warning = injection.warning;
@@ -338,18 +275,15 @@ function handleWireClose(name) {
 
   const wire = wires.get(topicHex);
 
-  // Close all connections
   for (const { conn } of wire.connections) {
     try { conn.destroy(); } catch {}
   }
   wire.connections.clear();
 
-  // Destroy swarm
   wire.swarm.destroy().catch((err) => {
     log(`Wire "${name}": error destroying swarm: ${err.message}`);
   });
 
-  // Remove live listeners for this topic
   liveListeners.delete(topicHex);
 
   wires.delete(topicHex);
@@ -414,7 +348,7 @@ function handleWireWrite(name, content, type = 'text') {
     }
   }
 
-  // Also add to own buffer
+  // Keep a local copy so the writer can read their own message.
   const seq = wire.buffer.length + 1;
   wire.buffer.push({ ...msg, peer_id: 'self', received_at: msg.ts });
   if (wire.buffer.length > MAX_BUFFER_SIZE) wire.buffer.shift();
@@ -483,10 +417,6 @@ function handleStatus() {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Inbox polling
-// ---------------------------------------------------------------------------
-
 async function handleIpcRequest(client, line) {
   try {
     const req = JSON.parse(line);
@@ -536,14 +466,9 @@ async function handleIpcRequest(client, line) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Daemon lifecycle
-// ---------------------------------------------------------------------------
-
 async function runDaemon() {
   ensureLensDir();
 
-  // Check for stale PID
   if (fs.existsSync(PID_PATH)) {
     try {
       const existingPid = parseInt(fs.readFileSync(PID_PATH, 'utf8').trim(), 10);
@@ -551,24 +476,19 @@ async function runDaemon() {
         console.error(`Daemon already running (PID ${existingPid})`);
         process.exit(1);
       }
-      // Stale PID file — clean up
       fs.unlinkSync(PID_PATH);
     } catch {
-      // Corrupted PID file — remove it
       try { fs.unlinkSync(PID_PATH); } catch {}
     }
   }
 
-  // Write our PID
   fs.writeFileSync(PID_PATH, String(process.pid), { mode: 0o600 });
   daemonStartTime = Date.now();
 
-  // Clean up stale socket
   if (fs.existsSync(SOCK_PATH)) {
     try { fs.unlinkSync(SOCK_PATH); } catch {}
   }
 
-  // Start IPC server
   const server = net.createServer((client) => {
     let buffer = '';
 
@@ -586,7 +506,6 @@ async function runDaemon() {
 
     client.on('error', (err) => {
       log(`IPC client error: ${err.message}`);
-      // Remove from any live listeners
       for (const [, listeners] of liveListeners) {
         listeners.delete(client);
       }
@@ -596,14 +515,12 @@ async function runDaemon() {
   server.on('error', (err) => {
     log(`IPC server error: ${err.message}`);
     if (err.code === 'EADDRINUSE') {
-      // Try to clean up and retry once
       try { fs.unlinkSync(SOCK_PATH); } catch {}
       server.listen(SOCK_PATH);
     }
   });
 
   server.listen(SOCK_PATH, () => {
-    // Set socket permissions so only the user can connect
     try { fs.chmodSync(SOCK_PATH, 0o600); } catch {}
     log(`IPC server listening on ${SOCK_PATH}`);
   });
@@ -618,7 +535,6 @@ async function runDaemon() {
   }, AUTO_STOP_INTERVAL_MS);
   autoStopCheck.unref(); // Don't keep process alive just for this
 
-  // Graceful shutdown handlers
   process.on('SIGTERM', () => {
     log('Received SIGTERM');
     shutdown();
@@ -646,7 +562,6 @@ async function shutdown() {
 
   log('Shutting down daemon...');
 
-  // Close all wires
   for (const [topicHex, wire] of wires) {
     try {
       for (const { conn } of wire.connections) {
@@ -661,17 +576,12 @@ async function shutdown() {
   wires.clear();
   writeWiresState();
 
-  // Clean up files
   try { fs.unlinkSync(PID_PATH); } catch {}
   try { fs.unlinkSync(SOCK_PATH); } catch {}
 
   log('Daemon stopped');
   process.exit(0);
 }
-
-// ---------------------------------------------------------------------------
-// Client API (used by CLI — these run in the CLI process, not the daemon)
-// ---------------------------------------------------------------------------
 
 function sendDaemonCommand(cmd) {
   return new Promise((resolve, reject) => {
@@ -761,9 +671,7 @@ function startDaemon() {
 async function ensureDaemon() {
   if (isDaemonRunning()) return;
   await startDaemon();
-  // Wait for socket to be ready
   await new Promise((resolve) => setTimeout(resolve, DAEMON_SOCKET_WAIT_MS));
-  // Verify it's actually running now
   if (!isDaemonRunning()) {
     throw new Error('Failed to start daemon — check ~/.lens/wire-daemon.log for details');
   }
@@ -775,7 +683,6 @@ async function stopDaemon() {
   } catch (err) {
     // If daemon isn't running, that's fine — the intent was to stop it
     if (err.message === 'Daemon not running') {
-      // Clean up stale files
       try { fs.unlinkSync(PID_PATH); } catch {}
       try { fs.unlinkSync(SOCK_PATH); } catch {}
       return { ok: true, already_stopped: true };
@@ -824,22 +731,15 @@ async function listWires() {
   return sendDaemonCommand({ cmd: 'wire.list' });
 }
 
-// ---------------------------------------------------------------------------
-// Module exports (client API for CLI usage)
-// ---------------------------------------------------------------------------
-
 module.exports = {
-  // Low-level
   sendDaemonCommand,
   isDaemonRunning,
   ensureDaemon,
 
-  // Daemon lifecycle
   startDaemon,
   stopDaemon,
   getDaemonStatus,
 
-  // Wire operations
   openWire,
   closeWire,
   closeAllWires,
@@ -849,15 +749,10 @@ module.exports = {
   listWires,
 };
 
-// ---------------------------------------------------------------------------
-// Daemon entry point (when run directly: node daemon.cjs)
-// ---------------------------------------------------------------------------
-
 if (require.main === module) {
   runDaemon().catch((err) => {
     log(`Fatal error starting daemon: ${err.message}\n${err.stack}`);
     console.error(`Fatal: ${err.message}`);
-    // Clean up on fatal
     try { fs.unlinkSync(PID_PATH); } catch {}
     try { fs.unlinkSync(SOCK_PATH); } catch {}
     process.exit(1);

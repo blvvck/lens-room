@@ -11,7 +11,6 @@ const WIRE_COMMANDS = new Set(["mail.wire.open", "mail.wire.write", "mail.wire.r
   "mail.wire.peers", "mail.wire.list", "mail.wire.cut", "mail.daemon",
   "mail.daemon.start", "mail.daemon.stop", "mail.daemon.status", "mail.daemon.logs"]);
 
-// `lens-wire open`, `lens-wire wire.open` and `lens-wire mail.wire.open` agree.
 function canonicalWireCommand(command) {
   if (!command) return command;
   if (command.startsWith("mail.")) return command;

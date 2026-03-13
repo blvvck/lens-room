@@ -13,8 +13,6 @@ const ROOM_COMMANDS = new Set([
   "mail.room.leave",
 ]);
 
-// `lens-room open`, `lens-room room.open` and `lens-room mail.room.open` all mean
-// the same thing; handlers keep their historical internal names.
 function canonicalRoomCommand(command) {
   if (!command) return command;
   if (command.startsWith("mail.")) return command;
