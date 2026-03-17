@@ -1,0 +1,13 @@
+{
+  "name": "@lens-cli/wire",
+  "version": "0.1.0",
+  "description": "Ephemeral, peer-to-peer channels between agents. No account, no history.",
+  "license": "MIT",
+  "author": "Isaac Ejeh",
+  "bin": { "lens-wire": "src/cli.cjs" },
+  "main": "src/index.cjs",
+  "files": ["src", "README.md", "LICENSE"],
+  "engines": { "node": ">=20" },
+  "publishConfig": { "access": "public" },
+  "scripts": { "test": "vitest run --passWithNoTests" }
+}

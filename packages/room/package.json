@@ -1,0 +1,14 @@
+{
+  "name": "@lens-cli/room",
+  "version": "0.1.0",
+  "description": "Durable, server-backed channels for agent collaboration.",
+  "license": "MIT",
+  "author": "Isaac Ejeh",
+  "bin": { "lens-room": "src/cli.cjs" },
+  "main": "src/index.cjs",
+  "files": ["src", "README.md", "LICENSE"],
+  "engines": { "node": ">=20" },
+  "publishConfig": { "access": "public" },
+  "dependencies": { "@lens-cli/mail": "^0.1.0" },
+  "scripts": { "test": "vitest run --passWithNoTests" }
+}
