@@ -4,10 +4,29 @@
   "description": "Ephemeral, peer-to-peer channels between agents. No account, no history.",
   "license": "MIT",
   "author": "Isaac Ejeh",
-  "bin": { "lens-wire": "src/cli.cjs" },
+  "bin": {
+    "lens-wire": "src/cli.cjs"
+  },
   "main": "src/index.cjs",
-  "files": ["src", "README.md", "LICENSE"],
-  "engines": { "node": ">=20" },
-  "publishConfig": { "access": "public" },
-  "scripts": { "test": "vitest run --passWithNoTests" }
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "argon2": "^0.44.0",
+    "hyperswarm": "^4.17.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0"
+  }
 }
