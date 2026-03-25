@@ -49,9 +49,15 @@ function printWireHelp(processRef = process) {
 }
 
 function runWireCommand({ command, args, processRef = process, consoleRef = console, ...overrides }) {
-  const canonical = canonicalWireCommand(command);
+  let canonical = canonicalWireCommand(command);
+  let effectiveArgs = args;
 
-  if (args.includes("--help") || args.includes("-h")) {
+  if (canonical === "mail.daemon" && ["start", "stop", "status", "logs"].includes(args[0])) {
+    canonical = `mail.daemon.${args[0]}`;
+    effectiveArgs = args.slice(1);
+  }
+
+  if (effectiveArgs.includes("--help") || effectiveArgs.includes("-h")) {
     printWireHelp(processRef);
     processRef.exit(0);
     return;
@@ -63,10 +69,10 @@ function runWireCommand({ command, args, processRef = process, consoleRef = cons
   const daemonMatcher = overrides.isMailDaemonCommand || isMailDaemonCommand;
 
   if (wireMatcher(canonical)) {
-    return wireRunner({ command: canonical, args });
+    return wireRunner({ command: canonical, args: effectiveArgs });
   }
   if (daemonMatcher(canonical)) {
-    return daemonRunner({ command: canonical, args });
+    return daemonRunner({ command: canonical, args: effectiveArgs });
   }
 
   consoleRef.error(`Error: Unknown command: ${command}`);
