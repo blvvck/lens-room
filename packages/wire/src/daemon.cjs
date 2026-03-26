@@ -1,14 +1,15 @@
 /**
- * mail-daemon.cjs — Wires + Mail Daemon for lens-cli
+ * daemon.cjs — wire daemon for @lens-cli/wire
  *
  * Handles:
- *   - Hyperswarm wire connections (P2P ephemeral messaging)
- *   - Inbox polling (periodic API calls for new mail)
- *   - Signal file writing (passive notifications)
- *   - Daemon lifecycle (background process management)
+ *   - Hyperswarm wire connections (peer-to-peer, ephemeral)
+ *   - Wire state (wires.json) and peer notification
+ *   - Daemon lifecycle: pid, socket, log, shutdown
  *
- * Run directly:  node mail-daemon.cjs   (starts daemon)
- * Import as lib: require('./mail-daemon.cjs')  (client API)
+ * Nothing here touches mail. No account, no polling, no signal file.
+ *
+ * Run directly:  node daemon.cjs   (starts the daemon)
+ * Import as lib: require('./daemon.cjs')  (client API)
  */
 
 'use strict';
@@ -849,7 +850,7 @@ module.exports = {
 };
 
 // ---------------------------------------------------------------------------
-// Daemon entry point (when run directly: node mail-daemon.cjs)
+// Daemon entry point (when run directly: node daemon.cjs)
 // ---------------------------------------------------------------------------
 
 if (require.main === module) {

@@ -119,14 +119,14 @@ async function runWireOpen(args, deps) {
   let passphrase = deps.processRef.env?.LENS_WIRE_PASS || flags.pass || positional[1];
 
   if (!name) {
-    deps.consoleRef.error("Usage: lens mail.wire.open <name> [passphrase]");
-    deps.consoleRef.error("  Or: LENS_WIRE_PASS=secret lens mail.wire.open <name>");
+    deps.consoleRef.error("Usage: lens-wire open <name> [passphrase]");
+    deps.consoleRef.error("  Or: LENS_WIRE_PASS=secret lens-wire open <name>");
     throw new MailWireExit(5);
   }
 
   if (positional[1] && !deps.processRef.env?.LENS_WIRE_PASS) {
     deps.processRef.stderr.write("\x1b[33mWarning: passphrase in command line is visible in process list.\x1b[0m\n");
-    deps.processRef.stderr.write(`\x1b[33mPrefer: LENS_WIRE_PASS=secret lens mail.wire.open ${name}\x1b[0m\n`);
+    deps.processRef.stderr.write(`\x1b[33mPrefer: LENS_WIRE_PASS=secret lens-wire open ${name}\x1b[0m\n`);
   }
 
   if (!passphrase) {
@@ -176,7 +176,7 @@ async function runWireWrite(args, deps) {
   const content = positional[1];
 
   if (!name || !content) {
-    deps.consoleRef.error("Usage: lens mail.wire.write <name> \"<message>\" [--type text]");
+    deps.consoleRef.error("Usage: lens-wire write <name> \"<message>\" [--type text]");
     throw new MailWireExit(5);
   }
 
@@ -204,7 +204,7 @@ async function runWireRead(args, deps) {
   const name = positional[0];
 
   if (!name) {
-    deps.consoleRef.error("Usage: lens mail.wire.read <name> [--last 10] [--live]");
+    deps.consoleRef.error("Usage: lens-wire read <name> [--last 10] [--live]");
     throw new MailWireExit(5);
   }
 
@@ -293,7 +293,7 @@ async function runWirePeers(args, deps) {
   const { flags, positional } = deps.parseMailFlags(args);
   const name = positional[0];
   if (!name) {
-    deps.consoleRef.error("Usage: lens mail.wire.peers <name>");
+    deps.consoleRef.error("Usage: lens-wire peers <name>");
     throw new MailWireExit(5);
   }
 
@@ -378,8 +378,8 @@ async function runWireCut(args, deps) {
   const name = positional[0];
 
   if (!name && !flags.all) {
-    deps.consoleRef.error("Usage: lens mail.wire.cut <name>");
-    deps.consoleRef.error("       lens mail.wire.cut --all");
+    deps.consoleRef.error("Usage: lens-wire cut <name>");
+    deps.consoleRef.error("       lens-wire cut --all");
     throw new MailWireExit(5);
   }
 
@@ -452,8 +452,6 @@ async function runDaemon(args, command, deps) {
           if (result.pid) deps.processRef.stderr.write(`  PID: ${result.pid}\n`);
           if (result.uptime) deps.processRef.stderr.write(`  Uptime: ${result.uptime}\n`);
           deps.processRef.stderr.write(`  Wires: ${result.wires || 0}\n`);
-          deps.processRef.stderr.write(`  Polling: ${result.polling ? "yes" : "no"}\n`);
-          if (result.lastPoll) deps.processRef.stderr.write(`  Last poll: ${relativeTime(result.lastPoll, deps)}\n`);
         }
       } else {
         deps.consoleRef.log(JSON.stringify(result, null, 2));
