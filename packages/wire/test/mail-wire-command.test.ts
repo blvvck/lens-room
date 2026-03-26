@@ -35,7 +35,7 @@ describe("mail wire command module", () => {
       }),
     ).rejects.toMatchObject({ code: 5 });
 
-    expect(error).toHaveBeenCalledWith("Usage: lens mail.wire.open <name> [passphrase]");
+    expect(error).toHaveBeenCalledWith("Usage: lens-wire open <name> [passphrase]");
   });
 
   it("does not force a success exit for wrapped mail.wire.list", async () => {
