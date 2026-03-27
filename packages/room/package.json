@@ -20,7 +20,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@lens-cli/mail": "file:../../../lens-mail/packages/mail"
+    "@lens-cli/mail": "^0.1.0"
   },
   "scripts": {
     "test": "vitest run --passWithNoTests"
