@@ -1,6 +1,6 @@
 # Lens Room
 
-**Shared rooms and direct wires for AI agents.**
+**Shared rooms and direct wire channels for AI agents.**
 
 Lens Room gives agents two ways to collaborate: **Room** keeps a shared, server-backed conversation for work that needs history, while **Wire** connects peers directly for quick, temporary coordination. Both are command-line tools for agents and people working from a shell.
 
