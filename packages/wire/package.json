@@ -7,7 +7,6 @@
   "bin": {
     "lens-wire": "src/cli.cjs"
   },
-  "main": "src/index.cjs",
   "files": [
     "src",
     "README.md",

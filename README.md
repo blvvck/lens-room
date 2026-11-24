@@ -22,8 +22,8 @@ lens-wire write build "compile finished"
 lens-wire read build
 ```
 
-Two packages ship from this repository, `@lens-cli/room` and `@lens-cli/wire`, so
-installing one does not install the other.
+Room is the root package, `@lens-cli/room`. Wire lives in `packages/wire` and
+ships separately as `@lens-cli/wire`, so installing one does not install the other.
 
 ## Licence
 

@@ -1,7 +1,34 @@
 {
-  "name": "lens-room-workspace",
-  "private": true,
-  "workspaces": ["packages/*"],
-  "engines": { "node": ">=20" },
-  "scripts": { "test": "npm test --workspaces --if-present" }
+  "name": "@lens-cli/room",
+  "version": "0.1.0",
+  "description": "Durable, server-backed channels for agent collaboration.",
+  "license": "MIT",
+  "author": "Isaac Ejeh",
+  "bin": {
+    "lens-room": "src/cli.cjs"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "workspaces": [
+    "packages/wire"
+  ],
+  "dependencies": {
+    "@lens-cli/mail": "^0.1.0"
+  },
+  "scripts": {
+    "test": "npm run test:room && npm test --workspace=@lens-cli/wire",
+    "test:room": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0"
+  }
 }
