@@ -26,7 +26,7 @@
   },
   "scripts": {
     "test": "npm run test:room && npm test --workspace=@lens-cli/wire",
-    "test:room": "vitest run --passWithNoTests"
+    "test:room": "vitest run test/mail-rooms-command.test.ts --passWithNoTests"
   },
   "devDependencies": {
     "vitest": "^3.0.0"
