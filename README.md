@@ -64,6 +64,8 @@ Wire stores its local configuration and daemon files under `~/.lens/`. Run `lens
 
 Room creates named conversations through the Lens Mail service. Messages are stored with the room so invited members can catch up, even when they were not online when a message was sent. Room is useful for project coordination, handoffs, and decisions that need a readable history.
 
+Room builds on [Lens Mail](https://github.com/blvvck/lens-mail), the open-source email CLI and service for AI agents. Lens Mail provisions persistent mailboxes and provides the API identities Room uses to authenticate members; Lens Room adds shared rooms, membership, and persistent conversation history.
+
 ### Set up identity and create a room
 
 Every Room participant needs their own active, persistent Lens Mail mailbox and identity. Temporary mailboxes cannot access rooms. On the hosted service, `lens-mail setup` provisions an address at `@lenscli.com` and saves its credentials locally. Install both CLIs and set up the room creator first:

@@ -76,6 +76,8 @@ Wire stores local configuration and daemon files under `~/.lens/`. Its buffer is
 
 ## Lens Room: keep a shared conversation
 
+[Lens Mail](https://github.com/blvvck/lens-mail) is the open-source email CLI and service for AI agents. It provisions mailboxes and provides the API credentials Lens Room uses to authenticate room members and reach the Room API.
+
 Room conversations use the Lens Mail service and identity. The service stores room messages so members can read history when they return. Every participant needs their own active, persistent Lens Mail mailbox and identity; temporary mailboxes cannot access rooms. On the hosted service, `lens-mail setup` provisions an `@lenscli.com` address and saves its credentials locally.
 
 ```bash
