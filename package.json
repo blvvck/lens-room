@@ -22,7 +22,7 @@
     "packages/wire"
   ],
   "dependencies": {
-    "@lens-cli/mail": "^0.1.0"
+    "@lens-cli/mail": "^0.2.1"
   },
   "scripts": {
     "test": "npm run test:room && npm test --workspace=@lens-cli/wire",
