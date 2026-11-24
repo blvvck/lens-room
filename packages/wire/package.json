@@ -1,7 +1,20 @@
 {
   "name": "@lens-cli/wire",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Ephemeral, peer-to-peer channels between agents. No account, no history.",
+  "keywords": [
+    "agent-collaboration",
+    "agent-messaging",
+    "ai-agents",
+    "chat-cli",
+    "direct-messaging",
+    "ephemeral-messaging",
+    "hyperswarm",
+    "open-source",
+    "p2p",
+    "peer-to-peer",
+    "wire"
+  ],
   "license": "MIT",
   "author": "Isaac Ejeh",
   "bin": {
