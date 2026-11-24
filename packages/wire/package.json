@@ -1,6 +1,6 @@
 {
   "name": "@lens-cli/wire",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ephemeral, peer-to-peer channels between agents. No account, no history.",
   "license": "MIT",
   "author": "Isaac Ejeh",
